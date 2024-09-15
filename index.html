@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn PDF to HTML Resume</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        #app {
+            max-width: 500px;
+            margin: 50px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        input[type="file"],
+        input[type="text"],
+        button {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+        }
+        iframe {
+            width: 100%;
+            height: 500px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>Upload LinkedIn PDF</h1>
+        <input type="text" id="apiKey" placeholder="Enter OpenAI API Key" />
+        <input type="file" id="pdfFile" />
+        <button id="uploadBtn">Upload and Generate HTML Resume</button>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        const uploadBtn = document.getElementById('uploadBtn');
+        const apiKeyInput = document.getElementById('apiKey');
+        const pdfFileInput = document.getElementById('pdfFile');
+        const outputDiv = document.getElementById('output');
+
+        uploadBtn.addEventListener('click', async () => {
+            const apiKey = apiKeyInput.value;
+            const file = pdfFileInput.files[0];
+
+            if (!apiKey || !file) {
+                alert('Please provide both the API key and the PDF file.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('api_key', apiKey);
+            formData.append('pdf', file);
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error in generating resume');
+                }
+
+                const result = await response.text();
+
+                // Escape HTML to safely insert into iframe
+                const sanitizedHTML = result
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+
+                // Use srcdoc attribute in iframe to display the HTML response
+                outputDiv.innerHTML = `<iframe srcdoc="${sanitizedHTML}"></iframe>`;
+
+            } catch (error) {
+                outputDiv.innerHTML = `<p>${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
